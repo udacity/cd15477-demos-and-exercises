@@ -1,0 +1,5 @@
+bundle,price_usd,storage_gb,support,ads,family_seats,offline_download
+Budget,5,50,Standard,Ads,1,No
+Mid,8,200,Standard,NoAds,4,Yes
+Premium,15,1000,Priority,NoAds,6,Yes
+ValuePlus,12,200,Priority,NoAds,4,Yes
