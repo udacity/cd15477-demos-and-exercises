@@ -1,0 +1,5 @@
+plan,price_per_week,meals_per_week,cuisine_variety,dietary_options,live_cooking_class,servings
+QuickBite,35,2,standard,no,no,2
+Classic,55,4,standard,yes,no,2
+Premium,85,4,premium,yes,yes,2
+FamilyFeast,95,6,standard,yes,no,4

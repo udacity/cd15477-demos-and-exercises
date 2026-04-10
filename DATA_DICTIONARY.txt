@@ -1,0 +1,164 @@
+# Data Dictionary — Meal Kit Delivery Exercise Datasets
+# Course: Customer and Behavioral Analytics (cd15477)
+# Scenario: Meal kit delivery company evaluating plan launch
+# All files in Exercise_Data/ folder
+# ─────────────────────────────────────────────────────────────────────────────
+
+## mealkit_choice_tasks.csv
+Used in: Choice Model, Conjoint Part-Worth, WTP exercises
+Rows: 14,400  (600 respondents × 8 tasks × 3 alternatives)
+
+Column              Type        Values / Range        Description
+──────────────────────────────────────────────────────────────────────────────
+respondent_id       int         1–600                 Survey respondent identifier
+task_id             int         1–8                   Choice task number within respondent
+alternative         string      A, B, C               Plan option within task
+meals_per_week      int         2, 4, 6               Number of meal recipes per week
+cuisine_variety     string      standard, premium     Ingredient and recipe quality tier
+dietary_options     string      no, yes               Whether plan includes diet-specific options
+                                                      (vegetarian, vegan, gluten-free)
+live_cooking_class  string      no, yes               Whether plan includes live virtual cooking class
+servings            int         1, 2, 4               Number of servings per meal
+price_per_week      int         30, 45, 65, 85, 110   Weekly price in US dollars
+chosen              int         0, 1                  Whether respondent selected this alternative
+                                                      (exactly one 1 per respondent-task combination)
+
+Notes:
+- Reference levels for encoding: cuisine_standard, dietary_no, live_cooking_class_no
+- Feature columns for model: price_per_week, meals_per_week, servings,
+  cuisine_variety_premium, dietary_options_yes, live_cooking_class_yes
+- 600 respondents × 8 tasks = 4,800 unique respondent-task combinations
+- Key output: dietary_options_yes has the largest positive coefficient (+0.678),
+  making dietary accommodation the top driver of plan selection
+
+
+## mealkit_plans.csv
+Used in: WTP, MDS exercises
+Rows: 4 (one per named plan)
+
+Column              Type        Values                Description
+──────────────────────────────────────────────────────────────────────────────
+plan                string      QuickBite, Classic,   Plan name
+                                Premium, FamilyFeast
+price_per_week      int         35, 55, 85, 95        Weekly price in US dollars
+meals_per_week      int         2, 4, 4, 6            Recipes per week
+cuisine_variety     string      standard / premium    Ingredient and recipe quality tier
+dietary_options     string      no / yes              Dietary accommodation included
+live_cooking_class  string      no / yes              Live virtual cooking class included
+servings            int         2, 2, 2, 4            Servings per meal
+
+Plan summaries:
+- QuickBite:   $35/week, 2 meals, standard, no dietary, no class, 2 servings
+- Classic:     $55/week, 4 meals, standard, dietary yes, no class, 2 servings
+- Premium:     $85/week, 4 meals, premium,  dietary yes, class yes, 2 servings
+- FamilyFeast: $95/week, 6 meals, standard, dietary yes, no class, 4 servings
+
+Notes:
+- For MDS: engineer log_price = np.log(price_per_week); create binary flags for
+  cuisine_variety, dietary_options, live_cooking_class
+- For bundle scoring: encode same features as mealkit_choice_tasks.csv
+- WTP estimates from choice model: dietary options $19.29/week,
+  live cooking class $11.13/week, premium cuisine $10.18/week
+- Bundle scores (predicted choice probability): Classic 0.373, QuickBite 0.346,
+  Premium 0.305, FamilyFeast 0.161
+- MDS closest substitutes: QuickBite vs Classic (distance = 2.940)
+- MDS whitespace plan: QuickBite (avg distance = 4.250 from all others)
+
+
+## mealkit_trial_adoption.csv
+Used in: Propensity Overlap, IPW Effect Estimation exercises
+Rows: 8,000
+
+Column                   Type      Values / Range    Description
+──────────────────────────────────────────────────────────────────────────────
+user_id                  int       1–8000            User identifier
+age                      float     22–65             User age in years
+household_size           float     1–5               Number of people in household
+prior_orders             float     0–14              Number of prior food delivery orders
+weekly_app_sessions      float     0–11              Average weekly app sessions last 30 days
+region                   string    Northeast,        User's geographic region
+                                   Southeast,        (~15% missing — fill with 'Unknown')
+                                   Midwest, West
+device                   string    mobile,           Primary device used
+                                   desktop, tablet
+trial_offer_sent         int       0, 1              Whether user received "first box free" offer
+                                                     (treatment variable — NOT randomized)
+converted_to_paid        int       0, 1              Whether user converted to a paid subscription
+first_month_revenue      float     0–~45             Revenue in first month after offer window ($)
+
+Notes:
+- Treatment variable: trial_offer_sent
+- Outcome variables: converted_to_paid, first_month_revenue
+- Offer targeting was non-random: larger households and users with more prior_orders
+  were more likely to receive the offer (creates selection bias)
+- region has ~15% missing values — fill with 'Unknown' before encoding
+- Encode region and device with get_dummies(drop_first=True) before fitting propensity model
+- Pre-treatment SMD: household_size max imbalance = 0.606 (most imbalanced covariate)
+- Post-IPW SMD: max |SMD| drops to 0.003 (all covariates effectively balanced)
+- Naive ATE: conversion +12.08 pp, revenue +$3.87/user
+- IPW ATE:   conversion +8.06 pp,  revenue +$2.56/user
+- Selection bias (naive − IPW): ~4 pp conversion, ~$1.30/user revenue
+
+
+## mealkit_survey.csv
+Used in: Factor Analysis exercise
+Rows: 800
+
+Column          Type    Values    Description
+──────────────────────────────────────────────────────────────────────────────
+respondent_id   int     1–800     Survey respondent identifier
+Q01–Q16         int     1–5       Likert scale items (1=Strongly Disagree, 5=Strongly Agree)
+
+Survey item groups (for factor interpretation context):
+- Q01–Q04: Recipe Quality and Variety items
+  (e.g., "The recipe variety is an important reason I choose this meal kit")
+  — high mean responses (~3.6–4.0), indicating broad agreement
+- Q05–Q08: Convenience and Ease items
+  (e.g., "I prefer meal kits that require minimal prep time")
+  — moderate mean responses (~2.9–3.4)
+- Q09–Q12: Value for Money and Budget items
+  (e.g., "I choose meal plans primarily based on price per serving")
+  — low mean responses (~2.3–2.6), indicating more disagreement or polarization
+- Q13–Q16: Overall Satisfaction items
+  (e.g., "Overall, I am satisfied with my meal kit experience")
+  — moderate mean responses (~2.9–3.3); these items cross-load across all three factors
+
+Notes:
+- Standardize all items with StandardScaler before fitting FactorAnalysis
+- FactorAnalysis(n_components=3, random_state=42)
+- Loadings: fa.components_.T  → shape (16 items × 3 factors)
+- Factor labels are a subjective judgment based on the top-loading items
+- Factor 1 (general level): Q15, Q14, Q16 are top items — all-negative loadings
+  indicate a general engagement/overall satisfaction factor, not a specific construct
+- Factor 2 (contrast): Q02, Q04 (quality items, negative) vs Q10 (value item, positive)
+  — separates quality-oriented from budget-oriented customers
+- Factor 3 (convenience): Q06, Q07, Q05 are top items — captures convenience orientation
+
+
+## mealkit_marketing_weekly.csv
+Used in: MMM Baseline, MMM Budget exercises
+Rows: 104 (2 years of weekly data, Jan 2022 – Dec 2023)
+
+Column              Type      Values / Range    Description
+──────────────────────────────────────────────────────────────────────────────
+week                int       1–104             Sequential week number
+date                string    YYYY-MM-DD        Week start date (Monday)
+spend_search        float     ~100–1,300        Weekly paid search spend ($)
+spend_social        float     ~50–600           Weekly social media paid spend ($)
+spend_influencer    float     ~150–2,800        Weekly influencer partnership spend ($)
+                                                (includes campaign burst weeks)
+spend_email         float     ~50–380           Weekly email campaign cost ($)
+spend_affiliate     float     ~30–520           Weekly affiliate marketing cost ($)
+weekly_revenue      float     ~6,300–10,400     Total weekly revenue from new subscribers ($)
+                                                (mean ≈ $8,562; CV ≈ 0.10)
+
+Notes:
+- Apply adstock transformation (alpha=0.3) to all spend columns before modeling
+- Adstock formula: adstock[t] = spend[t] + 0.3 × adstock[t-1]
+- Add time controls: t (linear trend 1 to 104), sin52 (annual sine), cos52 (annual cosine)
+- Time-based 80/20 train/test split — do NOT shuffle rows
+- Use Ridge(alpha=1.0) for regularized regression
+- Expected test MAE: ~$240 (~2.8% of mean revenue)
+- Channel coefficient direction: influencer positive (+0.090), search positive (+0.049);
+  social, email, and affiliate negative — likely reflecting counter-cyclical deployment
+  patterns rather than causal negative effects
